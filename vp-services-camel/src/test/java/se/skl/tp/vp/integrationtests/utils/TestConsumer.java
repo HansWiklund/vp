@@ -2,6 +2,7 @@ package se.skl.tp.vp.integrationtests.utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import org.apache.camel.CamelContext;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Produce;
@@ -56,12 +57,28 @@ public class TestConsumer {
   }
 
   public String sendHttpRequestToVP(String message, Map<String, Object> headers){
-    resultEndpoint.reset();
+    return sendHttpRequestToVP(message, headers, true);
+  }
+
+
+  public String sendHttpRequestToVP(String message, Map<String, Object> headers, boolean reset){
+    if(reset){
+      resultEndpoint.reset();
+    }
     return template.requestBodyAndHeaders(
-            DIRECT_START_HTTP,
-            message,
-            headers, String.class
+        DIRECT_START_HTTP,
+        message,
+        headers, String.class
     );
+  }
+  public CompletableFuture<String> sendAsyncHttpRequestToVP(String message, Map<String, Object> headers){
+
+    return template.asyncRequestBodyAndHeaders(
+        DIRECT_START_HTTP,
+        message,
+        headers, String.class
+    );
+
   }
 
   public String sendHttpRequestToVP(String message){

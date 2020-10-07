@@ -74,6 +74,13 @@ Spring-boot property fil som ligger under resources i jaren. Inställningarna ka
 |producer.https.keepAlive|true|Sätt keepAlive http header mot https producent samt aktivera keepAlive på socket|
 |producer.http.workers|50|Antal Netty Eventloop threads för http producer|
 |producer.https.workers|150|Antal Netty Eventloop threads för https producer|
+|throttle.maxInflightExchanges|2000|Max antal tillåtna pågående anrop i VP. Övergår antalet stängs routen och alla konsumenter får ett HTTP 503|
+|throttle.resumePercentOfMax|70|När ska routen startas efter att ha varit stängd. I procent av maxInflightExchanges|
+|throttle.client.maxRequests|250|Max request en enskild klient får anropa per tidenhet definierad i timePeriodMillis|
+|throttle.client.timePeriodMillis|1000|Tidenhet i millisekunder|
+|throttle.client.rejectExecution|true|True innebär att klientens anrop avbryts om max antal per tidsenhet uppnås. Konsumenten får HTTP 500 och SoapFault|
+|throttle.client.correlationKey|${exchangeProperty.senderid}|Definitionen av en enskild klient uttryckt i Camels Simple Language. Default används klientens HSA Id. Skall denna ändras krävs god kunskap i Camel och VP.|
+
 
 ### Application-security.properties ###
 Default Spring-boot property fil (Kräver att Spring profilen 'security' är aktiverad). Denna fil i original ligger under resources i jaren. Inställningarna kan överlagras enligt de sätt som Spring-boot föreskriver. 

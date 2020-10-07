@@ -8,12 +8,15 @@ import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.netty4.http.NettyHttpOperationFailedException;
+import org.apache.camel.impl.ThrottlingInflightRoutePolicy;
+import org.apache.camel.processor.ThrottlerRejectedExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import se.skl.tp.vp.certificate.CertificateExtractorProcessor;
 import se.skl.tp.vp.charset.ConvertRequestCharset;
 import se.skl.tp.vp.charset.ConvertResponseCharset;
 import se.skl.tp.vp.config.HttpHeaderFilterProperties;
+import se.skl.tp.vp.config.ThrottlingProperties;
 import se.skl.tp.vp.constants.VPExchangeProperties;
 import se.skl.tp.vp.errorhandling.ExceptionMessageProcessor;
 import se.skl.tp.vp.errorhandling.HandleEmptyResponseProcessor;
@@ -128,8 +131,19 @@ public class VPRouter extends RouteBuilder {
     @Autowired
     private ConvertResponseCharset convertResponseCharset;
 
+    @Autowired
+    private ThrottlingProperties throttle;
+
     @Override
     public void configure() throws Exception {
+        ThrottlingInflightRoutePolicy throttlingInflightRoutePolicy = new ThrottlingInflightRoutePolicy();
+        throttlingInflightRoutePolicy.setMaxInflightExchanges(throttle.getMaxInflightExchanges());
+        throttlingInflightRoutePolicy.setResumePercentOfMax(throttle.getResumePercentOfMax());
+
+        onException(ThrottlerRejectedExecutionException.class)
+            .process(exceptionMessageProcessor)
+            .bean(MessageInfoLogger.class, LOG_ERROR_METHOD)
+            .handled(true);
 
         onException(Exception.class)
             .process(exceptionMessageProcessor)
@@ -140,23 +154,31 @@ public class VPRouter extends RouteBuilder {
             .handled(true);
 
 
-        from(NETTY4_HTTPS_INCOMING_FROM).routeId(VP_HTTPS_ROUTE)
+        from(NETTY4_HTTPS_INCOMING_FROM).routeId(VP_HTTPS_ROUTE).routePolicy(throttlingInflightRoutePolicy)
             .choice()
               .when(header("wsdl").isNotNull()).process(wsdlProcessor)
               .when(header("xsd").isNotNull()).process(wsdlProcessor)
             .otherwise()
                 .process(certificateExtractorProcessor)
+                .throttle(constant(throttle.getClient().getMaxRequests()), simple(throttle.getClient().getCorrelationKey()))
+                        .callerRunsWhenRejected(true)
+                        .rejectExecution(throttle.getClient().isRejectExecution())
+                        .timePeriodMillis(throttle.getClient().getTimePeriodMillis())
                 .to(DIRECT_VP)
                 .removeHeaders(headerFilter.getResponseHeadersToRemove(), headerFilter.getResponseHeadersToKeep())
                 .bean(MessageInfoLogger.class, LOG_RESP_OUT_METHOD)
             .end();
 
-        from(NETTY4_HTTP_FROM).routeId(VP_HTTP_ROUTE)
+        from(NETTY4_HTTP_FROM).routeId(VP_HTTP_ROUTE).routePolicy(throttlingInflightRoutePolicy)
             .choice()
               .when(header("wsdl").isNotNull()).process(wsdlProcessor)
               .when(header("xsd").isNotNull()).process(wsdlProcessor)
             .otherwise()
                 .process(httpSenderIdExtractorProcessor)
+                .throttle(constant(throttle.getClient().getMaxRequests()), simple(throttle.getClient().getCorrelationKey()))
+                        .callerRunsWhenRejected(true)
+                        .rejectExecution(throttle.getClient().isRejectExecution())
+                        .timePeriodMillis(throttle.getClient().getTimePeriodMillis())
                 .to(DIRECT_VP)
                 .removeHeaders(headerFilter.getResponseHeadersToRemove(), headerFilter.getResponseHeadersToKeep())
                 .bean(MessageInfoLogger.class, LOG_RESP_OUT_METHOD)
