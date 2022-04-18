@@ -151,7 +151,7 @@ public class FullServiceErrorHandlingIT extends LeakDetectionBaseTest {
         new String[]{"Anrop har gjorts utanför TLS vilket ej är tillåtet"},
         new String[]{""});
 
-    assertEquals(1, TestLogAppender.getNumEvents(MessageInfoLogger.REQ_ERROR));
+    assertEquals(0, TestLogAppender.getNumEvents(MessageInfoLogger.REQ_ERROR));
     assertRespOutLogWithRespCode500("VP011");
     assertRespOutLogWithRespCode500("Caller was not on the white list of accepted IP-addresses");
   }

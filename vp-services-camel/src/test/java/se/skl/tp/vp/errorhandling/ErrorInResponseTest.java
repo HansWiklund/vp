@@ -175,7 +175,7 @@ public class ErrorInResponseTest extends LeakDetectionBaseTest {
     assertTrue(resultBody.contains("Anrop har gjorts"));
     assertTrue(resultBody.contains("Caller was not on the white list of accepted IP-addresses"));
     resultEndpoint.assertIsSatisfied();
-    assertEquals(1, TestLogAppender.getNumEvents(MessageInfoLogger.REQ_ERROR));
+    assertEquals(0, TestLogAppender.getNumEvents(MessageInfoLogger.REQ_ERROR));
     assertEquals(1, TestLogAppender.getNumEvents(MessageInfoLogger.RESP_OUT));
 
     String respOutLogMsg = TestLogAppender.getEventMessage(MessageInfoLogger.RESP_OUT,0);

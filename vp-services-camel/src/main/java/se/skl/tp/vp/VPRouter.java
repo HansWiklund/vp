@@ -59,6 +59,7 @@ public class VPRouter extends RouteBuilder {
         + "disconnect={{producer.http.disconnect}}&"
         + "keepAlive={{producer.http.keepAlive}}&"
         + "workerGroup=#sharedClientHttpPool&"
+        + "throwExceptionOnFailure=false&"
         + "connectTimeout={{producer.http.connect.timeout}}";
     public static final String NETTY_HTTPS_OUTGOING_TOD = "netty-http:https://${exchangeProperty.vagvalHost}?"
         + "sslContextParameters=#outgoingSSLContextParameters&"
@@ -69,6 +70,7 @@ public class VPRouter extends RouteBuilder {
         + "disconnect={{producer.https.disconnect}}&"
         + "keepAlive={{producer.https.keepAlive}}&"
         + "workerGroup=#sharedClientHttpsPool&"
+        + "throwExceptionOnFailure=false&"
         + "connectTimeout={{producer.https.connect.timeout}}";
 
     public static final String VAGVAL_PROCESSOR_ID = "VagvalProcessor";
